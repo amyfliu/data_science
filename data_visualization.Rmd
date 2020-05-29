@@ -5,13 +5,84 @@ date: "5/27/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+### 1.2 Introduction to Distributions 
+```{r}
+# load the dataset
+library(dslabs)
+data(heights)
+# make a table of category proportions
+prop.table(table(heights$sex))
+```
+a <- seq(min(my_data), max(my_data), length = 100)    # define range of values spanning the dataset
+cdf_function <- function(x) {    # computes prob. for a single value
+  mean(my_data <= x)
+}
+cdf_values <- sapply(a, cdf_function)
+plot(a, cdf_values)
+
+#### Normal Distribution
+```{r}
+# define x as vector of male heights
+library(tidyverse)
+library(dslabs)
+data(heights)
+index <- heights$sex=="Male"
+x <- heights$height[index]
+
+# calculate the mean and standard deviation manually
+average <- sum(x)/length(x)
+SD <- sqrt(sum((x - average)^2)/length(x))
+
+# built-in mean and sd functions - note that the audio and printed values disagree
+average <- mean(x)
+SD <- sd(x) 
+#NOTE: The built-in R function sd() calculates the st. dev, but it divides by length(x)-1 instead of length(x). This is neglible if the sample is large. 
+c(average = average, SD = SD)
+
+# calculate standard units - converts a vector of approximately normally distributed values into z-scores.
+z <- scale(x)
+
+# calculate proportion of values within 2 SD of mean
+mean(abs(z) < 2)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+#### Using the function pnorm()
+```{r}
+#Given male heights x, we can estimate the probability that a male is TALLER than 70.5 inches with:
+library(tidyverse)
+library(dslabs)
+data(heights)
+x <- heights %>% filter(sex=="Male") %>% pull(height)
+1 - pnorm(70.5, mean(x), sd(x))
+
+# plot distribution of exact heights in data
+#table(x)
+#prop.table(table(x))
+plot(prop.table(table(x)), xlab = "a = Height in inches", ylab = "Pr(x = a)")
+
+# probabilities in actual data over length 1 ranges containing an integer with normal approxim.
+mean(x <= 68.5) - mean(x <= 67.5)
+pnorm(68.5, mean(x), sd(x)) - pnorm(67.5, mean(x), sd(x))
+
+mean(x <= 69.5) - mean(x <= 68.5)
+pnorm(69.5, mean(x), sd(x)) - pnorm(68.5, mean(x), sd(x))
+
+# probabilities in actual data over other ranges DON't match normal approx as well
+mean(x <= 70.9) - mean(x <= 70.1)
+pnorm(70.9, mean(x), sd(x)) - pnorm(70.1, mean(x), sd(x))
+
+#Estimate the proportion of seven footers in the NBA; assume height with mean of 69 and std of 3
+#in the whole population and that 1 billion people are between ages 18:40 (age in order to be in NBA)
+p <- 1 - pnorm(7*12, 69, 3)
+N <- round(p * 10^9)
+10/N #about 3.5% of 7-footers the age of 18:40 are in the NBA
+```
+
+
+### 1.3 Quantiles, Percentiles, and Boxplots
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see [here.](http://rmarkdown.rstudio.com)
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
@@ -19,8 +90,7 @@ When you click the **Knit** button a document will be generated that includes bo
 summary(cars)
 ```
 
-## Including Plots
-
+### Including Plots
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
