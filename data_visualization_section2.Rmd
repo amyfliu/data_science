@@ -1,0 +1,248 @@
+---
+title: "data_visualization_2"
+author: "Amy L"
+date: "6/4/2020"
+output: html_document
+---
+
+## 2.1 Basics of ggplot2 
+
+Plots in **ggplot2** consist of 3 main components:
+- Data: The dataset being summarized
+- Geometry: The type of plot(scatterplot, boxplot, barplot, etc)
+- Aesthetic mapping: variables mapped to visual cues such as x and y axis values and color 
+
+You can associate a dataset x with a ggplot object with any of the 3 commands:  
+1.ggplot(data = x)
+2.ggplot(x)
+3.x %>% ggplot()
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dslabs)
+data("murders")
+p <- ggplot(data = murders); class(p)
+```
+
+**Important note**  
+*aes( ) uses variable names from the object component(for example, total rather than murders$total)  
+*geom_point() creates scatterplot and requires x and y aesthetic mappings  
+*geom_text() and geom_label() add text to a scatterplot and require x, y, and label aesthetic mappings  
+
+```{r}
+murders %>% ggplot() + geom_point(aes(x = population/10^6, y = total))
+#add text layer to scatterplot
+p + geom_point(aes(population/10^6, total)) + geom_text(aes(population/10^6, total, label = abb)) #geom_label can also be used 
+```
+
+> p_test <- p + geom_text(aes(population/10^6, total), label = abb) 
+Note that an error occurs - "abb" is NOT a globally defined variable and cannot be found outside of aes 
+
+
+##2.2 Customizing Plots 
+```{r}
+# change the size of the points - using size
+p + geom_point(aes(population/10^6, total), size = 3) + geom_text(aes(population/10^6, total, label = abb))
+    
+# move text labels slightly to the right - using nudge_x
+p + geom_point(aes(population/10^6, total), size = 3) + geom_text(aes(population/10^6, total, label = abb), nudge_x = 1)
+    
+# simplify code by adding "global aesthetic""
+p <- murders %>% ggplot(aes(population/10^6, total, label = abb))
+p + geom_point(size = 3) +
+    geom_text(nudge_x = 1.5)
+    
+# local aesthetics override global aesthetics
+p + geom_point(size = 3) +
+    geom_text(aes(x = 10, y = 800, label = "Hello there!")) #redefine mappings
+```
+Global aesthetic mappings apply to ALL geometries and can be defined when you initially call ggplot(). All the geometries added as layers will default to this mapping. Local aesthetic mappings add additional information or override the default mappings.  
+
+#### Scales, Labels, and Colours
+**Key Points**  
+1. Convert x-axis to log scale with scale_x_continuous(trans = "log10") or scale_x_log10()  
+2. axis titles: xlab() and ylab(); title: ggtitle()  
+3. Color mappings: 1) to color all points the same way, define col outside of aes() 2) to add color mapping that colors points by a variable, define the col argument within aes()  
+4. use geom_abline() to add a line; arguments: slope(default = 1) and intercept(default = 0); change the color with col or color and line type with lty  
+5. There are many ways to tweak your graph; for example, you can change the legend title with scale_color_discrete()  
+
+**Log-scale the x and y axis**  
+```{r}
+# define p
+library(tidyverse)
+library(dslabs)
+data(murders)
+p <- murders %>% ggplot(aes(population/10^6, total, label = abb)); p
+
+# log base 10 scale the x-axis and y-axis
+p + geom_point(size = 3) +
+    geom_text(nudge_x = 0.050) +
+    scale_x_continuous(trans = "log10") +
+    scale_y_continuous(trans = "log10")
+    
+# efficient log scaling of the axes
+p + geom_point(size = 3) +
+    geom_text(nudge_x = 0.075) +
+    scale_x_log10() +
+    scale_y_log10()
+```
+
+
+**Add labels and title**  
+```{r}
+p + geom_point(size = 3) +
+    geom_text(nudge_x = 0.075) +
+    scale_x_log10() +
+    scale_y_log10() +
+    xlab("Population in millions (log scale)") +
+    ylab("Total number of murders (log scale)") +
+    ggtitle("US Gun Murders in 2010")
+```
+
+
+**Change color of the points**  
+```{r}
+#first redefine p to be everything EXCEPT the points layer 
+p <- murders %>% ggplot(aes(population/10^6, total, label = abb)) +
+  geom_text(nudge_x = 0.075) + #adds the state names
+  scale_x_log10() +
+  scale_y_log10() +
+  xlab("Population in Millions (log scale)") +
+  ylab("Total number of murders (log scale)") +
+  ggtitle("US Gun Murders in 2010")
+p
+
+#make all points blue 
+p + geom_point(size = 3, color = "blue")
+
+#color points by region
+p + geom_point(aes(col = region), size = 3)
+```
+
+**Add a line with average murder rate & change legend title**
+```{r}
+#first define average murder rate
+r <- murders %>% summarize(rate = sum(total) / sum(population) * 10^6) %>% pull(rate)
+
+#basic line with average murder rate for the country
+p + geom_point(aes(col = region), size = 3) + geom_abline(intercept = log10(r))
+
+#change line to dashed and dark grey, line under points
+#add line first, then the points;lty = "line type"
+p <- p + geom_abline(intercept = log10(r), lty = 2, color = "darkgrey") + geom_point(aes(col = region), size = 3) + scale_color_discrete(name = "Region")
+p
+```
+
+
+#### Add-on Packages
+**Key Points**  
+- The style of a ggplot graph can be changed using the theme() function  
+- The **ggthemes** package adds additional themes  
+- The **ggrepel** package includes a geometry that repels text labels, ensuring they do not overlap with each other: geom_text_repel()  
+
+**Adding themes**
+```{r}
+library(dslabs)
+ds_theme_set()
+
+#themes from ggthemes
+library(ggthemes)
+p + theme_economist()
+p + theme_fivethirtyeight()
+```
+
+**Putting everything together to assemble the plot**
+```{r}
+#load libraries
+library(tidyverse)
+library(ggrepel)
+library(ggthemes)
+library(dslabs)
+data(murders)
+
+#define the intercept 
+r <- murders %>% summarize(rate = sum(total)/sum(population) * 10^6) %>% .$rate
+
+murders %>% 
+ggplot(aes(population/10^6, total, label = abb)) + geom_abline(intercept = log10(r), lty = 2, color = "darkgrey") + 
+  geom_point(aes(col = region), size = 3) +
+  geom_text_repel() + #ensures that text does not overlap each other 
+  scale_x_log10() +
+  scale_y_log10() + 
+  xlab("Population in millions (log scale)") +
+  ylab("Total number of murders (log scale)") +
+  ggtitle("US Gun Murders in 2010") +
+  scale_color_discrete(name = "Region") +
+  theme_economist()
+```
+
+#### Other examples
+
+**Key points**  
+- geom_histogram() creates a histogram; use binwidth argument to change the width of bins, the fill argument to change the bar fill color, and the col argument to change bar outline color  
+- geom_density() creates smooth density plots  
+- geom_qq() creates a quantile-quantile plot
+ +by default, the data are compared to a standard normal distribution with mean of 0 and standard deviation of 1  
+ + this can be changed with the dparams argument or the sample data can be scaled  
+- plots can be arranged adjacent to each other using the grid.arrange() function from the gridExtra package  
+  - create the plots and save them to objects (p1, p2,...) and then pass the objects to grid.arrange()  
+
+**Histograms in ggplot2**
+```{r}
+#load heights data
+library(tidyverse)
+library(dslabs)
+data(heights)
+
+#define p
+p <- heights %>% filter(sex == "Male") %>% ggplot(aes(x = height))
+
+#basic histograms
+p + geom_histogram()
+p + geom_histogram(binwidth = 1)
+
+#histogram with blue fill, black outline, labels and title
+p + geom_histogram(binwidth = 1, fill = "pink", col = "white") + xlab("Male heights in inches") + ggtitle("Histogram")
+```
+
+**Smooth density plots in ggplot2**
+```{r}
+p + geom_density()
+p + geom_density(fill = "pink")
+```
+
+**Quantitle-quantile plots in ggplot2**
+```{r}
+#basic QQ-plot
+p <- heights %>% filter(sex == "Male") %>% ggplot(aes(sample = height))
+p + geom_qq()
+
+#QQ-plot against a normal distribution with same mean/sd as data
+params <- heights %>% filter(sex == "Male") %>% summarize(mean = mean(height), sd = sd(height))
+p + geom_qq(dparams = params) + geom_abline()
+
+#QQ-plot of scaled data against the standard normal distribution
+heights %>% ggplot(aes(sample = scale(height))) + geom_qq() + geom_abline() #scale(height) converts observations into st. s
+```
+
+**Grids of plots with the gridExtra package**
+```{r}
+#define plots p1, p2, p3
+p <- heights %>% filter(sex == "Male") %>% ggplot(aes(x = height))
+p1 <- p + geom_histogram(binwidth = 1, fill = "pink", col = "black")
+p2 <- p + geom_histogram(binwidth = 2, fill = "pink", col = "black")
+p3 <- p + geom_histogram(binwidth = 3, fill = "pink", col = "black")
+
+#arrange plots next to each other in 1 row, 3 columns
+library(gridExtra)
+grid.arrange(p1, p2, p3, ncol = 3)
+```
+
+Notes:
+- if we use the color argument in geom_label, all the colors will be blue so we do not need to "map" colors
+- if each label needs a different color, we will need to "map" the colors through aes (i.e., aethetic mapping)
+```{r}
+murders %>% ggplot(aes(population, total, label = abb, color = region)) +
+  geom_label()
+```

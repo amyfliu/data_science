@@ -1,0 +1,187 @@
+---
+title: 'Data Science: Visualization'
+author: "Amy L"
+date: "5/27/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### 1.2 Introduction to Distributions 
+```{r}
+# load the dataset
+library(dslabs)
+data(heights)
+# make a table of category proportions
+prop.table(table(heights$sex))
+```
+a <- seq(min(my_data), max(my_data), length = 100)    # define range of values spanning the dataset
+cdf_function <- function(x) {    # computes prob. for a single value
+  mean(my_data <= x)
+}
+cdf_values <- sapply(a, cdf_function)
+plot(a, cdf_values)
+
+#### Normal Distribution
+```{r}
+# define x as vector of male heights
+library(tidyverse)
+library(dslabs)
+data(heights)
+index <- heights$sex=="Male"
+x <- heights$height[index]
+
+# calculate the mean and standard deviation manually
+average <- sum(x)/length(x)
+SD <- sqrt(sum((x - average)^2)/length(x))
+
+# built-in mean and sd functions - note that the audio and printed values disagree
+average <- mean(x)
+SD <- sd(x) 
+#NOTE: The built-in R function sd() calculates the st. dev, but it divides by length(x)-1 instead of length(x). This is neglible if the sample is large. 
+c(average = average, SD = SD)
+
+# calculate standard units - converts a vector of approximately normally distributed values into z-scores.
+z <- scale(x)
+
+# calculate proportion of values within 2 SD of mean
+mean(abs(z) < 2)
+```
+
+
+#### Using the function pnorm()
+```{r}
+#Given male heights x, we can estimate the probability that a male is TALLER than 70.5 inches with:
+library(tidyverse)
+library(dslabs)
+data(heights)
+x <- heights %>% filter(sex=="Male") %>% pull(height)
+1 - pnorm(70.5, mean(x), sd(x))
+
+# plot distribution of exact heights in data
+#table(x)
+#prop.table(table(x))
+plot(prop.table(table(x)), xlab = "a = Height in inches", ylab = "Pr(x = a)")
+
+# probabilities in actual data over length 1 ranges containing an integer with normal approxim.
+mean(x <= 68.5) - mean(x <= 67.5)
+pnorm(68.5, mean(x), sd(x)) - pnorm(67.5, mean(x), sd(x))
+
+mean(x <= 69.5) - mean(x <= 68.5)
+pnorm(69.5, mean(x), sd(x)) - pnorm(68.5, mean(x), sd(x))
+
+# probabilities in actual data over other ranges DON't match normal approx as well
+mean(x <= 70.9) - mean(x <= 70.1)
+pnorm(70.9, mean(x), sd(x)) - pnorm(70.1, mean(x), sd(x))
+
+#Estimate the proportion of seven footers in the NBA; assume height with mean of 69 and std of 3
+#in the whole population and that 1 billion people are between ages 18:40 (age in order to be in NBA)
+p <- 1 - pnorm(7*12, 69, 3)
+N <- round(p * 10^9)
+10/N #about 3.5% of 7-footers the age of 18:40 are in the NBA
+```
+
+
+### 1.3 Quantiles, Percentiles, and Boxplots
+Load the heights dataset from the dslabs package:
+```{r}
+library(dslabs)
+data(heights)
+```
+
+Use summary() on the heights$height variable to find the quartiles:
+```{r}
+summary(heights$height) 
+```
+
+Find the percentiles of heights$height: (think of standardilized tests such as the SAT)
+```{r}
+p <- seq(0.01, 0.99, 0.01);p
+percentiles <- quantile(heights$height, p); percentiles #percentile is a named numeric vector 
+#Note: given a dataset data and desired quantile q, you can find the qth quantile of data with: quantile(data,q)
+#The qth quantile is the value at which  𝑞 % of the observations are equal to or less than that value.
+#NOTE: The 50th percentile is also known as the median.
+```
+
+Confirm that the 25th and 75th percentiles match the 1st and 3rd quartiles. Note that quantile() returns a named vector. You can access the 25th and 75th percentiles like this (adapt the code for other percentile values):
+```{r}
+percentiles[names(percentiles) == "25%"] #66  "25% of the observations are equal to or less than 66""
+percentiles[names(percentiles) == "75%"]
+percentiles
+```
+
+#### Finding quantiles with qnorm()
+The qnorm() function gives the theoretical value of a quantile with probability p of observing a value equal to or less than that quantile value given a normal distribution with mean mu and standard deviation sigma:
+```{r}
+qnorm(0.975) #Answer = 1.96 --> 97.5% of values are less than 1.96
+```
+
+The pnorm() function gives the probability that a value from a standard normal distribution will be less than or equal to a z-score value z.
+```{r}
+pnorm(1.96)  #probability that a value is less than or equal to 1.96 is 0.975
+```
+Note that qnorm() and pnorm() are inverse functions
+```{r}
+pnorm(qnorm(0.975))
+```
+
+You can use qnorm() to determine the theoretical quantiles of a dataset: that is, the theoretical value of quantiles assuming that a dataset follows a normal distribution. Run the qnorm() function with the desired probabilities p, mean mu and standard deviation sigma. 
+```{r}
+p <- seq(0.01, 0.99, 0.01)
+theoretical_quantiles <- qnorm(p, 69, 3); theoretical_quantiles
+```
+*Note: Theoretical quantiles can be compared to sample quantiles determined with the quantile function in order to evaluate whether the sample follows a normal distribution.
+
+#### [Quantile-Quantile Plots](https://rafalab.github.io/dsbook/distributions.html#quantile-quantile-plots)
+Quantile-quantile plots, or QQ-plots, are used to check whether distributions are well-approximated by a normal distribution.
+Given a proportion p, the quantile q is the value such that the proportion of values in the data below q is p.
+In a QQ-plot, the sample quantiles in the observed data are compared to the theoretical quantiles expected from the normal distribution. 
+
+**If the data are well-approximated by the normal distribution, then the points on the QQ-plot will fall near the identity line (sample = theoretical).**
+- Calculate sample quantiles (observed quantiles) using the quantile() function.
+- Calculate theoretical quantiles with the qnorm() function. qnorm() will calculate quantiles for the standard normal distribution (μ=0,σ=1) by default, but it can calculate quantiles for any normal distribution given mean() and sd() arguments.
+
+```{r}
+# define x and z
+library(tidyverse)
+library(dslabs)
+data(heights)
+index <- heights$sex=="Male" #index is a logical vector 
+x <- heights$height[index]; x
+z <- scale(x) #scale() returns the Z-score
+
+# proportion of data below 69.5
+mean(x <= 69.5)
+
+# calculate observed and theoretical quantiles
+p <- seq(0.05, 0.95, 0.05)
+observed_quantiles <- quantile(x, p)
+theoretical_quantiles <- qnorm(p, mean = mean(x), sd = sd(x)) #theoretical_quantitles assumes normal distribution
+
+# make QQ-plot
+plot(theoretical_quantiles, observed_quantiles)
+abline(0,1) #abline() adds a straight line through the current plot (intercept:0, slope =1)
+
+# make QQ-plot with scaled values
+observed_quantiles <- quantile(z, p)
+theoretical_quantiles <- qnorm(p)
+plot(theoretical_quantiles, observed_quantiles)
+abline(0,1) #y=x
+
+
+#DATACAMP - Percentiles
+library(dslabs)
+data(heights)
+quantile(heights$height, seq(0.01, 0.99, 0.01))
+
+male <- heights$height[heights$sex=="Male"]
+female <- heights$height[heights$sex=="Female"]
+male_percentiles <- quantile(male, seq(0.1, 0.9, 0.2)); male_percentiles
+female_percentiles <- quantile(female, seq(0.1, 0.9, 0.2));female_percentiles
+#dataframe
+df <- data.frame(female = female_percentiles, male = male_percentiles);df
+```
+
+### 1.4 Exploratory Data Analysis
+- If a distribution is not normal, it CANNOT be summarized with only the mean and standard deviation --> use a histogram, smooth density or boxplot instead. 
+> "The greatest value of a picture is when it forces us to notice what we never expected to see."- Johh Tukey 
