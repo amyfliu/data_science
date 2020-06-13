@@ -1,0 +1,97 @@
+---
+title: "Data Visualization Principles"
+author: "Amy L"
+date: "6/8/2020"
+output: html_document
+---
+
+##Section 5 Overview  
+- Understand basic principles of effective data visualization  
+- Understand principles for encoding data, including position, aligned lengths, angles, area, brightness, and color hue.  
+- Know when to include the number zero in visualizations  
+- Use techniques to ease comparisons, such as using common axes, putting visual cues to be compared adjacent to one another, and using color effectively.  
+
+###Data Visualization Principles Pt I
+
+**Encoding Data Using Visual Cues**  
+- Visual cues for encoding data include position, length, angle, area, brigtness, and color hue.  
+- Position/legth > angles > areas > brightness/colors  
+- Pie charts represent visual cues as both angles and area; donut charts use ONLY area --> should use a bar plot instead!!! 
+- Bar plots represent visual cues as position and length.  
+- Humans are good at visually quantifying linear measures, making bar plots a STRONG alternative to pie or donut charts!  
+
+**Know when to include 0**  
+- When using bar plots, ALWAYS start at 0. It is deceptive not to start at 0 because bar plots imply length is proportional to the quantity displayed. Cutting off the y-axis can make differences look bigger than they actually are.  
+- When using **position** rather than length, it is NOT necessary to include 0 (scatterplot, dot plot, boxplot).  
+
+**Do NOT Distort Quantities**  
+- Make sure your visualizations encode the correct quantities.  
+- For example, if you are using a plot that relies on circle area, make sure the AREA (rather than the radius) is proportional to the quantity.  
+- Ex: comparing USA's GDP with CHINA: not appropriate to compare using radius, area should be used instead!  
+
+**Order by a Meaningful Value**  
+- Don't use order arbitrarily(i.e., alphabetically), use something that is representative and useful instead.  
+- Easier to extract information from a plot when categories are ordered by a meaningful value. The exact value on which to order will depend on your data and the message you wish to convey with your plot.  
+- NOTE: The default ordering for categories is alphabetical if the categories are strings or by factor levels if factors. We rarely want alphabetical order, however.  
+
+
+###Data Visualization Principles Pt II
+
+**Show the Data**  
+- A dynamite plot - a bar graph of group averages with error bars denoting standard errors - provides almost NO information about a *distribution*.  
+- Showing the data will provide viewers with extra information about the distributions.  
+- Jitter is adding a small random shift to each point in order to minimize the # of overlapping points (i.e., points that fall right on top of one another). Use geom_jitter() geometry instead of geom_point().  
+- Alpha blending is making points somewhat **transparent**, helping visualize the density of overlapping points. Add an alpha argument to the geometry.  
+```{r}
+#dot plot showign the data
+library(tidyverse)
+library(dslabs)
+data("heights")
+heights %>% ggplot(aes(sex, height)) + geom_point()  
+
+#jittered, alpha blended point plot  
+heights %>% ggplot(aes(sex, height)) + geom_jitter(width = 0.1, alpha = 0.2)
+```
+
+**Ease Comparisons: Use Common Axes**  
+- Keep axes the same when comparing data across multiple plots. 
+- Align plots vertically to see horizontal changes. Align plots horizontally to see vertical changes. Examples: put histograms(which shows spread/horizontal changes) on top of one another; put box-plots (which shows vertical data) side by side 
+- Bar plots are useful for showing one number but NOT useful for showing distributions.  
+
+**Consider Transformations**  
+- use **log transformations** when changes are multiplicative(ex: population size).  
+- **Logistic** transformation: useful to better see fold changes in odds.  
+- **Square root** transformation - useful for count data.  
+
+**Ease comparisons: Compared visual cues should be adjacent**  
+- Use color to encode groups to be compared.  
+- Note: 10% of population is colorblind --> use color-blind friendly colors.  
+```{r}
+color_blind_friendly_cols <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+p1 <- data.frame(x = 1:8, y = 1:8, col = as.character(1:8)) %>% ggplot(aes(x,y,color = col)) + geom_point(size = 5)
+
+p1 + scale_color_manual(values = color_blind_friendly_cols)
+```
+[Pt II DATACAMP ASSIGNMENTS](https://rpubs.com/faisalcep/dsVisualization)
+
+
+###Data Visualization Principles Pt III
+**Slope Charts**  
+**Encoding a Third Variable**  
+**Case Study: Vaccines**  
+**Avoid Pseudo and Gratuitous 3D Plots**    
+**Avoid Too Many Significannt Digits**  
+
+###Assessment: Titanic Survival**  
+###Assessment Pt 1: Properties of Stars**  
+###Assessment Pt 2: Climate Change**  
+
+>END OF COURSE!!!
+
+
+
+
+
+
+
